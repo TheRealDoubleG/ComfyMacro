@@ -1,6 +1,6 @@
 # ComfyMacro
 
-**Version 0.3 – Beta**  
+**Version 0.4 – Beta**  
 **Tested target: WoW Forever 1.60.1 / Build 70009 / Interface 16001**  
 Author: **TheRealDoubleG**  
 Discord: **the.real.double.g**
@@ -19,6 +19,9 @@ ComfyMacro is a guided in-game macro builder for the Comfy Suite on WoW Forever.
 - Detects learned spells and professions when the WoW Forever client exposes the required APIs.
 - German UI on a German client, English otherwise.
 - Shared Comfy Suite Info-tab and menu style.
+- Shared **Settings** tab immediately before Info with character/account/custom profiles and common window/minimap presentation controls.
+- Multi-line macro previews use a dedicated padded editor so commands remain aligned and readable.
+- Passive spellbook entries are filtered from learned-spell choices when the client provides a passive-spell API.
 
 ## Example macros
 
