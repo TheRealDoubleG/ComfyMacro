@@ -3,8 +3,22 @@ local CM = ComfyMacro
 
 local AUTO_ICON = "INV_MISC_QUESTIONMARK"
 
+local function IsPassiveSpellSafe(spellID)
+    if not spellID then return false end
+    if C_Spell and type(C_Spell.IsSpellPassive) == "function" then
+        local ok, passive = pcall(C_Spell.IsSpellPassive, spellID)
+        if ok then return passive and true or false end
+    end
+    if type(IsPassiveSpell) == "function" then
+        local ok, passive = pcall(IsPassiveSpell, spellID)
+        if ok then return passive and true or false end
+    end
+    return false
+end
+
 local function AddUnique(list, seen, name, spellID, icon)
     if not name or name == "" then return end
+    if IsPassiveSpellSafe(spellID) then return end
     local key = tostring(name):lower()
     if seen[key] then return end
     seen[key] = true
