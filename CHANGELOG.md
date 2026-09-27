@@ -1,5 +1,10 @@
 # ComfyMacro Changelog
 
+## 0.5 Beta – 27.09.2026
+- Fixed Background opacity so 0% fully removes the Comfy window background while the border can remain.
+- Aligned the shared Load / copy control with its profile dropdown.
+
+
 ## 0.4 Beta – 27.09.2026
 - Added the shared **Settings** tab immediately before Info with character/account/custom profiles and common window/minimap presentation controls.
 - Rebuilt multiline macro preview fields with proper top-left alignment, padding and dark backdrop so multi-line commands such as `/use 13` and `/use 14` render correctly.
