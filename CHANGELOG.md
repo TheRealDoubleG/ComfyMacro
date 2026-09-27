@@ -1,5 +1,12 @@
 # ComfyMacro Changelog
 
+## 0.3 Beta – 27.09.2026
+- Added reliable ComfyHub minimap bundling support.
+- The standalone minimap button now hides while ComfyHub bundling is active.
+- Disabling bundling restores the button according to ComfyMacro's own minimap visibility setting.
+- Re-enabling bundling hides the standalone button again immediately.
+
+
 ## 0.2 Beta – 27.09.2026
 - Builder now automatically inserts `#showtooltip` for the first spell/profession block when needed.
 - Automatic question-mark macro icons therefore adopt the selected spell/profession icon without requiring an extra builder step.
