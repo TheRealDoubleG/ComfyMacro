@@ -3,7 +3,7 @@
 ## Notes: Guided in-game macro builder for the Comfy Suite on WoW Forever.
 ## Notes-deDE: Geführter Ingame-Makro-Baukasten für die Comfy Suite in WoW Forever.
 ## Author: TheRealDoubleG
-## Version: 0.3
+## Version: 0.4
 ## SavedVariables: ComfyMacroDB
 ## X-Website: https://github.com/TheRealDoubleG/ComfyMacro
 ## X-ComfySuite: true
@@ -12,6 +12,7 @@
 
 Locale.lua
 Core.lua
+SharedSettings.lua
 MacroAPI.lua
 Templates.lua
 Assistant.lua
