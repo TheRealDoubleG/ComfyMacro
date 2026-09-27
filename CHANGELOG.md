@@ -1,5 +1,11 @@
 # ComfyMacro Changelog
 
+## 0.2 Beta – 27.09.2026
+- Builder now automatically inserts `#showtooltip` for the first spell/profession block when needed.
+- Automatic question-mark macro icons therefore adopt the selected spell/profession icon without requiring an extra builder step.
+- Custom icon selection remains available and does not remove the generated tooltip line.
+
+
 ## 0.1 Beta – 27.09.2026
 
 - Initial ComfyMacro release.

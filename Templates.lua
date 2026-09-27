@@ -81,6 +81,23 @@ end
 
 function CM:BuildBuilderBody()
     local lines = {}
+    local hasShowTooltip = false
+    local primary = nil
+
+    for _, block in ipairs(self.builder.blocks or {}) do
+        if block.type == "showtooltip" then hasShowTooltip = true end
+        if not primary and (block.type == "cast" or block.type == "mouseover" or block.type == "focus" or block.type == "self" or block.type == "profession") then
+            if block.value and block.value ~= "" then primary = block.value end
+        end
+    end
+
+    -- A spell/profession block automatically gets #showtooltip so the default
+    -- question-mark macro icon becomes the spell icon. Custom macro icons still
+    -- remain selectable through the icon picker.
+    if primary and not hasShowTooltip then
+        lines[#lines + 1] = "#showtooltip " .. primary
+    end
+
     for _, block in ipairs(self.builder.blocks or {}) do
         local line = self:BuildBlockLine(block)
         if line and line ~= "" then lines[#lines + 1] = line end
@@ -93,7 +110,7 @@ function CM:GetBuilderPrimarySpell()
         if block.type == "showtooltip" and block.value and block.value ~= "" then return block.value end
     end
     for _, block in ipairs(self.builder.blocks or {}) do
-        if (block.type == "cast" or block.type == "mouseover" or block.type == "focus" or block.type == "self")
+        if (block.type == "cast" or block.type == "mouseover" or block.type == "focus" or block.type == "self" or block.type == "profession")
             and block.value and block.value ~= "" then
             return block.value
         end

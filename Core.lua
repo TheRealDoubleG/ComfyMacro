@@ -4,7 +4,7 @@ ComfyMacro = ComfyMacro or {}
 local CM = ComfyMacro
 
 CM.name = ADDON_NAME or "ComfyMacro"
-CM.version = "0.1"
+CM.version = "0.2"
 CM.buildDate = "27.09.2026"
 CM.status = "Beta"
 CM.gameVersion = "WoW Forever 1.60.1"
