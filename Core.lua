@@ -4,7 +4,7 @@ ComfyMacro = ComfyMacro or {}
 local CM = ComfyMacro
 
 CM.name = ADDON_NAME or "ComfyMacro"
-CM.version = "0.3"
+CM.version = "0.4"
 CM.buildDate = "27.09.2026"
 CM.status = "Beta"
 CM.gameVersion = "WoW Forever 1.60.1"
@@ -34,6 +34,12 @@ local defaults = {
         relativePoint = "CENTER",
         x = 0,
         y = 10,
+    },
+    ui = {
+        windowLocked = false,
+        windowOpacity = 100,
+        showWindowBorder = true,
+        backgroundAlpha = 92,
     },
 }
 
@@ -84,12 +90,16 @@ function CM:GetCompatibilityStatus()
 end
 
 function CM:InitializeDB()
-    if type(ComfyMacroDB) ~= "table" then
-        ComfyMacroDB = CopyTable(defaults)
+    if self.InitializeProfileStorage then
+        self:InitializeProfileStorage(defaults, "ComfyMacroDB")
     else
-        ApplyDefaults(ComfyMacroDB, defaults)
+        if type(ComfyMacroDB) ~= "table" then
+            ComfyMacroDB = CopyTable(defaults)
+        else
+            ApplyDefaults(ComfyMacroDB, defaults)
+        end
+        self.db = ComfyMacroDB
     end
-    self.db = ComfyMacroDB
 end
 
 function CM:OpenOptions(tab)
