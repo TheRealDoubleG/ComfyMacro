@@ -1,5 +1,14 @@
 # ComfyMacro Changelog
 
+## 0.4 Beta – 27.09.2026
+- Added the shared **Settings** tab immediately before Info with character/account/custom profiles and common window/minimap presentation controls.
+- Rebuilt multiline macro preview fields with proper top-left alignment, padding and dark backdrop so multi-line commands such as `/use 13` and `/use 14` render correctly.
+- Reduced and widened the fixed explanation panel and moved nearby buttons to prevent overlap.
+- Removed minimap controls from the Builder page to free feature-space.
+- Filtered passive spellbook entries from learned-spell choices where the client exposes passive-spell APIs.
+- Changed active tabs to a selected/pushed state and cleaned Info footer spacing.
+
+
 ## 0.3 Beta – 27.09.2026
 - Added reliable ComfyHub minimap bundling support.
 - The standalone minimap button now hides while ComfyHub bundling is active.
