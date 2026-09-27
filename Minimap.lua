@@ -1,6 +1,21 @@
 ComfyMacro = ComfyMacro or {}
 local CM = ComfyMacro
 
+local function HubWantsBundled()
+    local hub = rawget(_G, "ComfyHub")
+    if type(hub) ~= "table" then return false end
+
+    if type(hub.IsMinimapBundlingActive) == "function" then
+        local ok, bundled = pcall(hub.IsMinimapBundlingActive, hub)
+        if ok then return bundled and true or false end
+    end
+
+    return hub.db
+        and hub.db.minimap
+        and hub.db.minimap.show
+        and hub.db.minimap.bundleSuiteIcons ~= false
+end
+
 local function Radius(button)
     if not Minimap then return 95 end
     local width = Minimap:GetWidth() or 140
@@ -16,10 +31,22 @@ local function Position(button, angle)
     button:SetPoint("CENTER", Minimap, "CENTER", math.cos(r) * radius, math.sin(r) * radius)
 end
 
+function CM:SetMinimapBundled(bundled)
+    self.minimapBundled = bundled and true or false
+    if self.minimapButton and self.db then
+        self:UpdateMinimapPosition()
+    end
+end
+
+function CM:ShouldShowMinimapButton()
+    if not self.db or not self.db.minimap then return false end
+    return self.db.minimap.show and not self.minimapBundled and not HubWantsBundled()
+end
+
 function CM:UpdateMinimapPosition()
     if not self.minimapButton or not self.db then return end
     Position(self.minimapButton, self.db.minimap.angle)
-    self.minimapButton:SetShown(self.db.minimap.show)
+    self.minimapButton:SetShown(self:ShouldShowMinimapButton())
 end
 
 function CM:InitializeMinimap()
@@ -33,22 +60,23 @@ function CM:InitializeMinimap()
     button:RegisterForDrag("LeftButton")
 
     local background = button:CreateTexture(nil, "BACKGROUND")
-    background:SetTexture("Interface\Minimap\UI-Minimap-Background")
+    background:SetTexture("Interface\\Minimap\\UI-Minimap-Background")
     background:SetSize(20, 20)
     background:SetPoint("CENTER")
 
     local icon = button:CreateTexture(nil, "ARTWORK")
-    icon:SetTexture("Interface\Icons\INV_Misc_Note_01")
+    icon:SetTexture("Interface\\Icons\\INV_Misc_Note_01")
     icon:SetSize(20, 20)
     icon:SetPoint("CENTER")
     icon:SetTexCoord(0.08, 0.92, 0.08, 0.92)
+    button.icon = icon
 
     local border = button:CreateTexture(nil, "OVERLAY")
-    border:SetTexture("Interface\Minimap\MiniMap-TrackingBorder")
+    border:SetTexture("Interface\\Minimap\\MiniMap-TrackingBorder")
     border:SetSize(54, 54)
     border:SetPoint("TOPLEFT", button, "TOPLEFT", 0, 0)
 
-    button:SetHighlightTexture("Interface\Minimap\UI-Minimap-ZoomButton-Highlight", "ADD")
+    button:SetHighlightTexture("Interface\\Minimap\\UI-Minimap-ZoomButton-Highlight", "ADD")
 
     button:SetScript("OnClick", function(_, mouseButton)
         if mouseButton == "RightButton" then CM:OpenOptions(2) else CM:OpenOptions(1) end
@@ -78,8 +106,11 @@ function CM:InitializeMinimap()
         end)
     end)
 
-    button:SetScript("OnDragStop", function(self) self:SetScript("OnUpdate", nil) end)
+    button:SetScript("OnDragStop", function(self)
+        self:SetScript("OnUpdate", nil)
+    end)
 
     self.minimapButton = button
+    self.minimapBundled = HubWantsBundled()
     self:UpdateMinimapPosition()
 end
