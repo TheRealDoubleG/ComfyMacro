@@ -1,0 +1,19 @@
+## Interface: 16001
+## Title: ComfyMacro
+## Notes: Guided in-game macro builder for the Comfy Suite on WoW Forever.
+## Notes-deDE: Geführter Ingame-Makro-Baukasten für die Comfy Suite in WoW Forever.
+## Author: TheRealDoubleG
+## Version: 0.1
+## SavedVariables: ComfyMacroDB
+## X-Website: https://github.com/TheRealDoubleG/ComfyMacro
+## X-ComfySuite: true
+## X-ComfyUI: 1
+## IconTexture: Interface\Icons\INV_Misc_Note_01
+
+Locale.lua
+Core.lua
+MacroAPI.lua
+Templates.lua
+Assistant.lua
+Minimap.lua
+Options.lua
