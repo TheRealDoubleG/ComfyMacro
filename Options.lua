@@ -44,13 +44,29 @@ local function CreateCheck(parent, text, x, y, getter, setter)
 end
 
 local function CreateEdit(parent, x, y, width, height, multi)
-    local edit = CreateFrame("EditBox", nil, parent, "InputBoxTemplate")
+    local template = multi and "BackdropTemplate" or "InputBoxTemplate"
+    local edit = CreateFrame("EditBox", nil, parent, template)
     edit:SetPoint("TOPLEFT", x, y)
     edit:SetSize(width, height or 28)
     edit:SetAutoFocus(false)
     edit:SetMultiLine(multi and true or false)
     edit:SetFontObject(multi and ChatFontNormal or GameFontHighlight)
     edit:SetScript("OnEscapePressed", function(self) self:ClearFocus() end)
+
+    if multi then
+        edit:SetBackdrop({
+            bgFile = "Interface\\DialogFrame\\UI-DialogBox-Background-Dark",
+            edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
+            tile = true, tileSize = 16, edgeSize = 12,
+            insets = {left = 4, right = 4, top = 4, bottom = 4},
+        })
+        edit:SetBackdropColor(0.03, 0.03, 0.03, 0.92)
+        edit:SetBackdropBorderColor(0.35, 0.35, 0.35, 0.9)
+        edit:SetJustifyH("LEFT")
+        edit:SetJustifyV("TOP")
+        if edit.SetTextInsets then edit:SetTextInsets(8, 8, 8, 8) end
+    end
+
     return edit
 end
 
@@ -104,7 +120,8 @@ local function SelectTab(index)
     local frame = CM.optionsFrame
     if not frame then return end
     for i, tab in ipairs(frame.tabs) do
-        tab:SetEnabled(i ~= index)
+        tab:SetEnabled(true)
+        tab:SetButtonState(i == index and "PUSHED" or "NORMAL", i == index)
         frame.pages[i]:SetShown(i == index)
     end
     CM.currentOptionsTab = index
@@ -118,8 +135,8 @@ end
 
 local function CreateExplanationBox(parent)
     local box = CreateFrame("Frame", nil, parent, "BackdropTemplate")
-    box:SetPoint("BOTTOMLEFT", 20, 20)
-    box:SetSize(680, 105)
+    box:SetPoint("BOTTOMLEFT", 20, 10)
+    box:SetSize(820, 88)
     box:SetBackdrop({
         bgFile = "Interface\\DialogFrame\\UI-DialogBox-Background-Dark",
         edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
@@ -131,7 +148,7 @@ local function CreateExplanationBox(parent)
     title:SetText(CM:T("EXPLANATION"))
     local text = box:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
     text:SetPoint("TOPLEFT", 12, -34)
-    text:SetWidth(650)
+    text:SetWidth(790)
     text:SetJustifyH("LEFT")
     text:SetJustifyV("TOP")
     box.text = text
@@ -337,6 +354,7 @@ function CM:RefreshOptions()
     self:RefreshBuilderUI()
     self:RefreshAssistantUI()
     self:RefreshMacroListUI()
+    if self.RefreshSharedSettingsPage then self:RefreshSharedSettingsPage() end
 end
 
 function CM:InitializeOptions()
@@ -358,7 +376,11 @@ function CM:InitializeOptions()
     frame:EnableMouse(true)
     frame:RegisterForDrag("LeftButton")
     frame:SetScript("OnMouseDown", function(self) self:Raise() end)
-    frame:SetScript("OnDragStart", function(self) self:Raise() self:StartMoving() end)
+    frame:SetScript("OnDragStart", function(self)
+        if CM:IsOptionsWindowLocked() then return end
+        self:Raise()
+        self:StartMoving()
+    end)
     frame:SetScript("OnDragStop", function(self)
         self:StopMovingOrSizing()
         local p, _, rp, x, y = self:GetPoint(1)
@@ -379,6 +401,7 @@ function CM:InitializeOptions()
         self:T("TAB_ASSISTANT"),
         self:T("TAB_TEMPLATES"),
         self:T("TAB_MY_MACROS"),
+        self:GetSharedSettingsTabLabel(),
         self:T("TAB_INFO"),
     }
 
@@ -499,14 +522,7 @@ function CM:InitializeOptions()
         CM:RefreshBuilderUI()
     end)
 
-    CreateCheck(builder, self:T("MINIMAP_SHOW"), 20, -435,
-        function() return CM.db.minimap.show end,
-        function(v) CM.db.minimap.show = v CM:UpdateMinimapPosition() end)
-    CreateCheck(builder, self:T("MINIMAP_LOCK"), 260, -435,
-        function() return CM.db.minimap.locked end,
-        function(v) CM.db.minimap.locked = v end)
-
-    CreateButton(builder, self:T("CREATE_MACRO"), 690, -440, 170, function() CM:CreateBuilderMacro() end)
+    CreateButton(builder, self:T("CREATE_MACRO"), 690, -410, 170, function() CM:CreateBuilderMacro() end)
     self.builderExplanation = CreateExplanationBox(builder)
 
     -- ASSISTANT
@@ -566,7 +582,7 @@ function CM:InitializeOptions()
         CM.assistant.state.customIcon = nil
         CM:RefreshAssistantUI()
     end)
-    self.assistantCreateButton = CreateButton(assistant, self:T("CREATE_MACRO"), 690, -452, 170, function() CM:CreateAssistantMacro() end)
+    self.assistantCreateButton = CreateButton(assistant, self:T("CREATE_MACRO"), 690, -420, 170, function() CM:CreateAssistantMacro() end)
 
     CreateButton(assistant, self:T("ASSIST_BACK"), 20, -405, 100, function() CM:AssistantBack() end)
     CreateButton(assistant, self:T("ASSIST_RESTART"), 130, -405, 130, function()
@@ -662,8 +678,12 @@ function CM:InitializeOptions()
         end
     end)
 
+    -- SETTINGS
+    local settingsPage = frame.pages[5]
+    self:BuildSharedSettingsPage(settingsPage)
+
     -- INFO
-    local infoPage = frame.pages[5]
+    local infoPage = frame.pages[6]
     local ititle = infoPage:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
     ititle:SetPoint("TOPLEFT", 20, -10)
     ititle:SetText(self:T("INFO_TITLE"))
@@ -739,17 +759,19 @@ function CM:InitializeOptions()
     InfoRow(self:T("INFO_COMMANDS"), "/comfymacro  ·  /cm", -328)
 
     local notice = infoBox:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
-    notice:SetPoint("TOPLEFT", 28, -360)
+    notice:SetPoint("TOPLEFT", 28, -345)
     notice:SetWidth(620)
+    notice:SetHeight(42)
     notice:SetJustifyH("LEFT")
+    notice:SetJustifyV("TOP")
     notice:SetText(self:T("INFO_NOTICE"))
 
     local copyright = infoBox:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
-    copyright:SetPoint("BOTTOMLEFT", 28, 68)
+    copyright:SetPoint("BOTTOMLEFT", 28, 48)
     copyright:SetText("© 2026 TheRealDoubleG")
 
     local thanks = infoBox:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
-    thanks:SetPoint("BOTTOMLEFT", 28, 28)
+    thanks:SetPoint("BOTTOMLEFT", 28, 16)
     thanks:SetWidth(620)
     thanks:SetJustifyH("LEFT")
     thanks:SetText(self:T("INFO_THANKS"))
@@ -793,10 +815,12 @@ function CM:InitializeOptions()
     self.iconPicker = picker
 
     frame:SetScript("OnShow", function()
+        CM:ApplySharedWindowSettings()
         CM:RefreshKnownData()
         CM:RefreshOptions()
     end)
 
+    self:ApplySharedWindowSettings()
     SelectTab(1)
     self:RefreshOptions()
 end
