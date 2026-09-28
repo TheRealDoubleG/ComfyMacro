@@ -243,6 +243,140 @@ function CM:ValidateMacro(name, body)
     return true, nil, name
 end
 
+function CM:GetKnownSpellNameSet()
+    local set = {}
+    for _, spell in ipairs(self:GetKnownSpells() or {}) do
+        set[string.lower(tostring(spell.name or ""))] = true
+    end
+    for _, prof in ipairs(self:GetProfessionsList() or {}) do
+        set[string.lower(tostring(prof.name or ""))] = true
+    end
+    return set
+end
+
+local knownCommands = {
+    ["#showtooltip"]=true, ["/cast"]=true, ["/castsequence"]=true, ["/castrandom"]=true,
+    ["/use"]=true, ["/target"]=true, ["/targetexact"]=true, ["/targetlasttarget"]=true,
+    ["/focus"]=true, ["/clearfocus"]=true, ["/stopcasting"]=true, ["/startattack"]=true,
+    ["/stopattack"]=true, ["/petattack"]=true, ["/petfollow"]=true, ["/petstay"]=true,
+    ["/petpassive"]=true, ["/petdefensive"]=true, ["/petassist"]=true,
+    ["/s"]=true, ["/say"]=true, ["/y"]=true, ["/yell"]=true, ["/p"]=true, ["/party"]=true,
+    ["/raid"]=true, ["/rw"]=true, ["/emote"]=true, ["/e"]=true, ["/run"]=true, ["/script"]=true,
+}
+
+local function StripMacroOptions(value)
+    value=tostring(value or "")
+    value=value:gsub("^%s*%b[]%s*","")
+    return value:gsub("^%s+",""):gsub("%s+$","")
+end
+
+function CM:AnalyzeMacro(body)
+    body=tostring(body or "")
+    local warnings={}
+    local explanations={}
+    local knownSpells=self:GetKnownSpellNameSet()
+
+    for line in body:gmatch("[^\r\n]+") do
+        local clean=line:gsub("^%s+",""):gsub("%s+$","")
+        if clean~="" then
+            local command=clean:match("^(#%S+)") or clean:match("^(/%S+)")
+            if command then
+                command=string.lower(command)
+                if not knownCommands[command] then
+                    warnings[#warnings+1]=string.format(self:T("WARNING_UNKNOWN_COMMAND"),command)
+                end
+                if command=="/run" or command=="/script" then
+                    warnings[#warnings+1]=self:T("WARNING_SCRIPT")
+                    explanations[#explanations+1]="• "..clean
+                elseif command=="#showtooltip" then
+                    explanations[#explanations+1]="• Tooltip/Icon: "..StripMacroOptions(clean:sub(#command+1))
+                elseif command=="/cast" or command=="/castsequence" or command=="/castrandom" then
+                    local arg=StripMacroOptions(clean:sub(#command+1))
+                    local first=arg:match("^([^,;]+)") or arg
+                    first=first:gsub("^reset=[^%s]+%s*",""):gsub("^%s+",""):gsub("%s+$","")
+                    if first~="" and not tonumber(first) and not knownSpells[string.lower(first)] then
+                        warnings[#warnings+1]=string.format(self:T("WARNING_UNKNOWN_SPELL"),first)
+                    end
+                    explanations[#explanations+1]="• Cast: "..arg
+                elseif command=="/use" then
+                    explanations[#explanations+1]="• Use: "..StripMacroOptions(clean:sub(#command+1))
+                elseif command=="/target" or command=="/targetexact" then
+                    explanations[#explanations+1]="• Target: "..StripMacroOptions(clean:sub(#command+1))
+                elseif command=="/focus" then
+                    explanations[#explanations+1]="• Focus: "..StripMacroOptions(clean:sub(#command+1))
+                elseif command=="/s" or command=="/say" or command=="/y" or command=="/yell" or command=="/p" or command=="/party" or command=="/raid" or command=="/rw" then
+                    explanations[#explanations+1]="• Chat: "..StripMacroOptions(clean:sub(#command+1))
+                elseif command=="/emote" or command=="/e" then
+                    explanations[#explanations+1]="• Emote: "..StripMacroOptions(clean:sub(#command+1))
+                else
+                    explanations[#explanations+1]="• "..clean
+                end
+            end
+        end
+    end
+
+    if #body > math.floor(self.macroMaxLength*0.85) then
+        warnings[#warnings+1]=string.format(self:T("WARNING_LONG"),#body,self.macroMaxLength)
+    end
+    return {
+        ok=#warnings==0 and #body<=self.macroMaxLength,
+        warnings=warnings,
+        explanation=#explanations>0 and table.concat(explanations,"\n") or self:T("EMPTY_PREVIEW"),
+        length=#body,
+        maxLength=self.macroMaxLength,
+    }
+end
+
+function CM:GetValidationText(body)
+    local result=self:AnalyzeMacro(body)
+    local lines={string.format("%d / %d",result.length,result.maxLength)}
+    if #result.warnings==0 then
+        lines[#lines+1]="✓ "..self:T("VALIDATION_OK")
+    else
+        for _,warning in ipairs(result.warnings) do lines[#lines+1]="! "..warning end
+    end
+    return table.concat(lines,"\n"), result
+end
+
+function CM:SaveMacroSnapshot(info, reason)
+    if not self.db or not info then return end
+    self.db.macroHistory=self.db.macroHistory or {}
+    local history=self.db.macroHistory
+    history[#history+1]={
+        name=tostring(info.name or ""),
+        body=tostring(info.body or ""),
+        icon=info.icon,
+        scope=info.scope or (info.isLocal and "character" or "account"),
+        reason=reason or "edit",
+        savedAt=(type(time)=="function" and time()) or 0,
+    }
+    while #history>20 do table.remove(history,1) end
+end
+
+function CM:FindLatestMacroSnapshot(name)
+    local history=self.db and self.db.macroHistory or {}
+    for i=#history,1,-1 do
+        if history[i].name==name then return history[i],i end
+    end
+end
+
+function CM:RestoreLatestMacroSnapshot(name)
+    local snap,index=self:FindLatestMacroSnapshot(name)
+    if not snap then self:Print(self:T("HISTORY_NONE")) return false end
+    local macroIndex=self:GetMacroIndexByNameCompat(name)
+    if not macroIndex then self:Print(self:T("HISTORY_NONE")) return false end
+    local current=self:GetMacroInfoCompat(macroIndex)
+    if current then current.scope=snap.scope self:SaveMacroSnapshot(current,"restore") end
+    local ok=self:EditMacroCompat(macroIndex,snap.name,snap.icon,snap.body,true)
+    if ok then
+        table.remove(self.db.macroHistory,index)
+        self:Print(string.format(self:T("HISTORY_RESTORED"),snap.name))
+        if self.RefreshMacroListUI then self:RefreshMacroListUI() end
+        return true
+    end
+    return false
+end
+
 function CM:GetMacroIndexByNameCompat(name)
     if type(GetMacroIndexByName) == "function" then
         local index = tonumber(self:SafeCall(GetMacroIndexByName, name))
@@ -282,7 +416,7 @@ function CM:CreateMacroCompat(name, icon, body, perCharacter)
     return index
 end
 
-function CM:EditMacroCompat(index, name, icon, body)
+function CM:EditMacroCompat(index, name, icon, body, skipSnapshot)
     if not self:IsMacroChangeAllowed() then return nil end
     if type(EditMacro) ~= "function" then
         self:Print(self:T("ERROR_API"))
@@ -291,6 +425,14 @@ function CM:EditMacroCompat(index, name, icon, body)
 
     local valid, err, cleanName = self:ValidateMacro(name, body)
     if not valid then self:Print(err) return nil end
+
+    if not skipSnapshot then
+        local before=self:GetMacroInfoCompat(index)
+        if before then
+            before.scope=before.isLocal and "character" or "account"
+            self:SaveMacroSnapshot(before,"edit")
+        end
+    end
 
     local ok, result = pcall(EditMacro, index, cleanName, icon, body)
     if not ok then
@@ -310,6 +452,11 @@ function CM:DeleteMacroCompat(index)
         return false
     end
 
+    local before=self:GetMacroInfoCompat(index)
+    if before then
+        before.scope=before.isLocal and "character" or "account"
+        self:SaveMacroSnapshot(before,"delete")
+    end
     local ok = pcall(DeleteMacro, index)
     if ok then
         self:Print(self:T("DELETED"))
