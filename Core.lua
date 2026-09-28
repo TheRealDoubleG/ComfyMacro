@@ -4,8 +4,8 @@ ComfyMacro = ComfyMacro or {}
 local CM = ComfyMacro
 
 CM.name = ADDON_NAME or "ComfyMacro"
-CM.version = "0.6"
-CM.buildDate = "27.09.2026"
+CM.version = "0.7"
+CM.buildDate = "28.09.2026"
 CM.status = "Beta"
 CM.gameVersion = "WoW Forever 1.60.1"
 CM.targetBuild = "70009"
@@ -41,6 +41,7 @@ local defaults = {
         showWindowBorder = true,
         backgroundAlpha = 92,
     },
+    macroHistory = {},
 }
 
 local function CopyTable(src)
