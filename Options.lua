@@ -136,7 +136,7 @@ end
 local function CreateExplanationBox(parent)
     local box = CreateFrame("Frame", nil, parent, "BackdropTemplate")
     box:SetPoint("BOTTOMLEFT", 20, 10)
-    box:SetSize(820, 88)
+    box:SetSize(820, 112)
     box:SetBackdrop({
         bgFile = "Interface\\DialogFrame\\UI-DialogBox-Background-Dark",
         edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
@@ -183,10 +183,13 @@ function CM:RefreshBuilderUI()
     if self.builderProfessionDropdown then self.builderProfessionDropdown:SetShown(block and block.valueType == "profession") end
     if self.builderEmoteDropdown then self.builderEmoteDropdown:SetShown(block and block.valueType == "emote") end
 
-    if self.builderExplanation then self.builderExplanation.text:SetText(self:GetBlockExplanation(builderType)) end
-
     local body = self:BuildBuilderBody()
     SetReadOnlyText(self.builderPreview, body ~= "" and body or self:T("EMPTY_PREVIEW"))
+    if self.builderExplanation then
+        local validation, analysis=self:GetValidationText(body)
+        local explanation=analysis.explanation:gsub("\n","  ")
+        self.builderExplanation.text:SetText(self:GetBlockExplanation(builderType).."\n"..self:T("EXPLAIN_SUMMARY")..": "..explanation.."\n"..self:T("VALIDATION_TITLE")..": "..validation:gsub("\n","  "))
+    end
 
     if self.builderIconState then
         self.builderIconState:SetText(self.builder.autoIcon and self:T("ICON_AUTOMATIC") or self:T("ICON_CUSTOM"))
@@ -247,7 +250,12 @@ function CM:RefreshAssistantUI()
 
     local body = self:BuildAssistantBody()
     SetReadOnlyText(self.assistantPreview, body ~= "" and body or self:T("EMPTY_PREVIEW"))
-    self.assistantExplanation.text:SetText(self:GetAssistantExplanation())
+    local validation,analysis=self:GetValidationText(body)
+    if isFinal then
+        self.assistantExplanation.text:SetText(self:T("EXPLAIN_SUMMARY")..": "..analysis.explanation:gsub("\n","  ").."\n"..self:T("VALIDATION_TITLE")..": "..validation:gsub("\n","  "))
+    else
+        self.assistantExplanation.text:SetText(self:GetAssistantExplanation().."\n"..self:T("VALIDATION_TITLE")..": "..validation:gsub("\n","  "))
+    end
 end
 
 function CM:OpenIconPicker(target)
@@ -703,6 +711,22 @@ function CM:InitializeOptions()
             CM.selectedMacro = nil
             CM.existingMacroName:SetText("")
             CM.existingMacroBody:SetText("")
+        end
+    end)
+
+    CreateButton(macros, self:T("HISTORY_RESTORE"), 650, -475, 205, function()
+        if CM.selectedMacro then
+            local name=CM.selectedMacro.name
+            if CM:RestoreLatestMacroSnapshot(name) then
+                local idx=CM:GetMacroIndexByNameCompat(name)
+                if idx then
+                    local refreshed=CM:GetMacroInfoCompat(idx)
+                    if refreshed then
+                        refreshed.scope=CM.selectedMacro.scope
+                        CM:SelectExistingMacro(refreshed)
+                    end
+                end
+            end
         end
     end)
 
