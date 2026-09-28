@@ -1,13 +1,13 @@
 # ComfyMacro
 
-**Version 0.6 – Beta**  
+**Version 0.7 – Beta**  
 **Tested target: WoW Forever 1.60.1 / Build 70009 / Interface 16001**  
 Author: **TheRealDoubleG**  
 Discord: **the.real.double.g**
 
 ComfyMacro is a guided in-game macro builder for the Comfy Suite on WoW Forever. It is designed for players who want useful macros without having to memorize WoW macro syntax.
 
-## 0.2 Beta
+## 0.7 Beta
 
 - **Builder** – combine simple blocks such as target, cast, trinkets, professions, emotes and chat commands.
 - **Assistant** – guided step-by-step creation with only the relevant next choices shown.
@@ -16,6 +16,9 @@ ComfyMacro is a guided in-game macro builder for the Comfy Suite on WoW Forever.
 - **Automatic spell icon** – spell macros use WoW's question-mark macro icon plus `#showtooltip`, so WoW displays the spell icon automatically.
 - **Custom icon picker** – switch from automatic mode to a manually selected macro icon.
 - **Fixed explanation area** – every builder block and assistant step explains what it does.
+- **Live macro validation** – checks length, uncommon commands and spells that are not found in the detected spellbook.
+- **Whole-macro explanation** – translates generated macro lines into a compact readable summary.
+- **Edit history / undo** – stores earlier versions before edits/deletion and can restore the latest saved edit.
 - Detects learned spells and professions when the WoW Forever client exposes the required APIs.
 - German UI on a German client, English otherwise.
 - Shared Comfy Suite Info-tab and menu style.
