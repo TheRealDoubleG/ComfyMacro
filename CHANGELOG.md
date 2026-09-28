@@ -1,5 +1,13 @@
 # ComfyMacro Changelog
 
+## 0.7 Beta – 28.09.2026
+- Added live macro validation with character-count, uncommon-command and unknown-spell warnings.
+- Added a compact whole-macro explanation to Builder and Assistant previews.
+- Added automatic snapshots before editing or deleting macros.
+- Added "Undo last edit" to restore the latest saved version.
+- Kept all validation advisory; WoW remains the final authority for secure macro behavior.
+
+
 ## 0.6 Beta – 28.09.2026
 - Registered ComfyMacro in Blizzard's native AddOns settings list with a button to open the full Comfy settings window.
 
